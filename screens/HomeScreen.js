@@ -6,16 +6,40 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useLayoutEffect } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import CustomListItem from "../components/CustomListItem";
 import { Avatar } from "@rneui/themed";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { AntDesign, SimpleLineIcons } from "@expo/vector-icons";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 const HomeScreen = ({ navigation }) => {
+  const [chats, setChats] = useState([]);
+
   const signOutUser = async () => {
     await auth.signOut();
     navigation.replace("Login");
   };
+
+  const chatRef = collection(db, "chats");
+  // console.log(chatRef);
+
+  useEffect(() => {
+    (async () => {
+      const docData = (await getDocs(chatRef)) || [];
+      const listOfDocs = docData.docs.map((item) => ({
+        ...item.data(),
+        id: item.id,
+      }));
+      setChats(listOfDocs);
+      // if (docData.exists()) {
+      //   setChats({
+      //     id: docData.id,
+      //     data: docData.data(),
+      //   });
+      // }
+    })();
+  }, []);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -30,12 +54,34 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       ),
+      headerRight: () => (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: 80,
+          }}
+        >
+          <TouchableOpacity activeOpacity={0.5}>
+            <AntDesign name="camerao" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AddChat")}
+            activeOpacity={0.5}
+          >
+            <SimpleLineIcons name="pencil" size={24} color="black" />
+          </TouchableOpacity>
+        </View>
+      ),
     });
-  }, []);
+  }, [navigation]);
+
   return (
     <SafeAreaView>
       <ScrollView>
-        <CustomListItem />
+        {chats.map((chat) => (
+          <CustomListItem key={chat.id} data={chat} />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
