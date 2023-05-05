@@ -2,7 +2,6 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -11,7 +10,7 @@ import CustomListItem from "../components/CustomListItem";
 import { Avatar } from "@rneui/themed";
 import { auth, db } from "../firebase";
 import { AntDesign, SimpleLineIcons } from "@expo/vector-icons";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 const HomeScreen = ({ navigation }) => {
   const [chats, setChats] = useState([]);
@@ -22,23 +21,26 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const chatRef = collection(db, "chats");
-  // console.log(chatRef);
+
+  const enterChat = (id, chatName) => {
+    navigation.navigate("Chat", {
+      id,
+      chatName,
+    });
+  };
 
   useEffect(() => {
-    (async () => {
-      const docData = (await getDocs(chatRef)) || [];
-      const listOfDocs = docData.docs.map((item) => ({
-        ...item.data(),
-        id: item.id,
-      }));
-      setChats(listOfDocs);
-      // if (docData.exists()) {
-      //   setChats({
-      //     id: docData.id,
-      //     data: docData.data(),
-      //   });
-      // }
-    })();
+    const arr = [];
+    const getChats = async () => {
+      const querySnapshot = await getDocs(collection(db, "chats"));
+      querySnapshot.forEach((doc) => {
+        arr.push({ id: doc.id, data: doc.data() });
+      });
+      setChats(arr);
+    };
+    getChats();
+
+    return () => getChats();
   }, []);
 
   useLayoutEffect(() => {
@@ -78,9 +80,14 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView>
-      <ScrollView>
+      <ScrollView style={styles.container}>
         {chats.map((chat) => (
-          <CustomListItem key={chat.id} data={chat} />
+          <CustomListItem
+            key={chat.id}
+            id={chat.id}
+            data={chat.data}
+            enterChat={enterChat}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -89,4 +96,8 @@ const HomeScreen = ({ navigation }) => {
 
 export default HomeScreen;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    height: "100%",
+  },
+});

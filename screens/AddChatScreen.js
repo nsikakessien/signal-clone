@@ -3,7 +3,7 @@ import React, { useLayoutEffect, useState } from "react";
 import { Button, Input } from "@rneui/themed";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { auth, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
 
 const AddChatScreen = ({ navigation }) => {
   const [input, setInput] = useState("");
@@ -17,7 +17,7 @@ const AddChatScreen = ({ navigation }) => {
 
   const createChat = async () => {
     try {
-      await setDoc(doc(db, "chats", auth.currentUser.uid), {
+      await addDoc(collection(db, "chats"), {
         chatName: input,
       });
       navigation.goBack();
