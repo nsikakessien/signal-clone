@@ -1,26 +1,44 @@
 import { StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, ListItem } from "@rneui/themed";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { db } from "../firebase";
 
-const CustomListItem = ({ id, data, enterChat }) => {
+const CustomListItem = ({ data, enterChat }) => {
+  const [chatMessages, setChatMessages] = useState([]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "chats", data.id, "messages"),
+      orderBy("timeStamp", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      setChatMessages(snapshot.docs.map((doc) => doc.data()));
+    });
+
+    return unsub;
+  }, []);
+
   return (
     <ListItem
-      key={id}
-      onPress={() => enterChat(id, data.chatName)}
+      onPress={() => enterChat(data.id, data.data.chatName)}
       bottomDivider
     >
       <Avatar
         rounded
         source={{
-          uri: "https://res.cloudinary.com/dpdzpf9hm/image/upload/v1682605541/cld-sample-5.jpg",
+          uri:
+            chatMessages?.[0]?.photoURL ||
+            "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
         }}
       />
       <ListItem.Content>
         <ListItem.Title style={{ fontWeight: "800" }}>
-          {data.chatName}
+          {data.data.chatName}
         </ListItem.Title>
         <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
-          This is a test subtitle
+          {chatMessages?.[0]?.message}
         </ListItem.Subtitle>
       </ListItem.Content>
     </ListItem>

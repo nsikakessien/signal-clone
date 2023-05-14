@@ -16,8 +16,6 @@ import { auth, db } from "../firebase";
 import {
   collection,
   doc,
-  getDoc,
-  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -37,7 +35,9 @@ const ChatScreen = ({ navigation, route }) => {
           <Avatar
             rounded
             source={{
-              uri: "https://res.cloudinary.com/dpdzpf9hm/image/upload/v1682605541/cld-sample-5.jpg",
+              uri:
+                messages[0]?.data?.photoURL ||
+                "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
             }}
           />
           <Text style={{ color: "white", marginLeft: 10, fontWeight: "700" }}>
@@ -62,7 +62,7 @@ const ChatScreen = ({ navigation, route }) => {
         </View>
       ),
     });
-  }, []);
+  }, [navigation, messages]);
 
   const sendMessage = async () => {
     Keyboard.dismiss();
@@ -81,7 +81,7 @@ const ChatScreen = ({ navigation, route }) => {
     const getChats = async () => {
       let arr = [];
       const docRef = collection(db, "chats", route.params.id, "messages");
-      const docQuery = query(docRef, orderBy("timeStamp", "desc"));
+      const docQuery = await query(docRef, orderBy("timeStamp", "desc"));
       onSnapshot(docQuery, (snapShot) => {
         snapShot.forEach((doc) => {
           arr.push({ id: doc.id, data: doc.data() });
@@ -90,23 +90,39 @@ const ChatScreen = ({ navigation, route }) => {
       });
     };
     getChats();
+    return () => getChats();
   }, [route]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <KeyboardAvoidingView style={styles.container}>
         <>
-          <ScrollView>
+          <ScrollView contentContainerStyle={{ paddingTop: 15 }}>
             {messages.map(({ id, data }) =>
               data.email === auth.currentUser.email ? (
                 <View key={id} style={styles.sender}>
-                  <Avatar />
+                  <Avatar
+                    rounded
+                    size={30}
+                    source={{ uri: data.photoURL }}
+                    position="absolute"
+                    bottom={-15}
+                    right={-5}
+                  />
                   <Text style={styles.senderText}>{data.message}</Text>
                 </View>
               ) : (
                 <View key={id} style={styles.receiver}>
-                  <Avatar />
+                  <Avatar
+                    rounded
+                    size={30}
+                    source={{ uri: data.photoURL }}
+                    position="absolute"
+                    bottom={-15}
+                    right={-5}
+                  />
                   <Text style={styles.receiverText}>{data.message}</Text>
+                  <Text style={styles.receiverName}>{data.displayName}</Text>
                 </View>
               )
             )}
@@ -135,6 +151,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  sender: {
+    alignSelf: "flex-end",
+    padding: 15,
+    borderRadius: 20,
+    marginRight: 15,
+    marginBottom: 20,
+    maxWidth: "80%",
+    position: "relative",
+    backgroundColor: "#ECECEC",
+  },
+  receiver: {
+    alignSelf: "flex-start",
+    padding: 15,
+    borderRadius: 20,
+    margin: 15,
+    maxWidth: "80%",
+    position: "relative",
+    backgroundColor: "#2B68E6",
+  },
   inputContainer: {
     bottom: 0,
     height: 40,
@@ -146,6 +181,23 @@ const styles = StyleSheet.create({
     padding: 10,
     color: "grey",
     borderRadius: 30,
+  },
+  receiverName: {
+    left: 10,
+    paddingRight: 10,
+    fontSize: 10,
+    color: "white",
+  },
+  receiverText: {
+    color: "white",
+    fontWeight: "500",
+    marginLeft: 10,
+    marginBottom: 15,
+  },
+  senderText: {
+    color: "black",
+    fontWeight: "500",
+    marginLeft: 10,
   },
   footer: {
     flexDirection: "row",

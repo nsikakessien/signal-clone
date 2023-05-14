@@ -10,7 +10,7 @@ import CustomListItem from "../components/CustomListItem";
 import { Avatar } from "@rneui/themed";
 import { auth, db } from "../firebase";
 import { AntDesign, SimpleLineIcons } from "@expo/vector-icons";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const HomeScreen = ({ navigation }) => {
   const [chats, setChats] = useState([]);
@@ -27,19 +27,12 @@ const HomeScreen = ({ navigation }) => {
     });
   };
 
-  const chatRef = collection(db, "chats");
-
   useEffect(() => {
-    const arr = [];
-    const getChats = async () => {
-      onSnapshot(chatRef, (snapShot) => {
-        snapShot.forEach((doc) => {
-          arr.push({ id: doc.id, data: doc.data() });
-        });
-        setChats(arr);
-      });
-    };
-    getChats();
+    const unsub = onSnapshot(collection(db, "chats"), (snapshot) => {
+      setChats(snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() })));
+    });
+
+    return unsub;
   }, []);
 
   useLayoutEffect(() => {
@@ -81,12 +74,7 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView>
       <ScrollView style={styles.container}>
         {chats.map((chat) => (
-          <CustomListItem
-            key={chat.id}
-            id={chat.id}
-            data={chat.data}
-            enterChat={enterChat}
-          />
+          <CustomListItem key={chat.id} data={chat} enterChat={enterChat} />
         ))}
       </ScrollView>
     </SafeAreaView>
