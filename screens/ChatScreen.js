@@ -13,10 +13,21 @@ import React, { useLayoutEffect, useState } from "react";
 import { Avatar } from "@rneui/themed";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebase";
-import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 
 const ChatScreen = ({ navigation, route }) => {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -66,16 +77,46 @@ const ChatScreen = ({ navigation, route }) => {
     setInput("");
   };
 
+  useLayoutEffect(() => {
+    const getChats = async () => {
+      let arr = [];
+      const docRef = collection(db, "chats", route.params.id, "messages");
+      const docQuery = query(docRef, orderBy("timeStamp", "desc"));
+      onSnapshot(docQuery, (snapShot) => {
+        snapShot.forEach((doc) => {
+          arr.push({ id: doc.id, data: doc.data() });
+        });
+        setMessages(arr);
+      });
+    };
+    getChats();
+  }, [route]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <KeyboardAvoidingView style={styles.container}>
         <>
-          <ScrollView></ScrollView>
+          <ScrollView>
+            {messages.map(({ id, data }) =>
+              data.email === auth.currentUser.email ? (
+                <View key={id} style={styles.sender}>
+                  <Avatar />
+                  <Text style={styles.senderText}>{data.message}</Text>
+                </View>
+              ) : (
+                <View key={id} style={styles.receiver}>
+                  <Avatar />
+                  <Text style={styles.receiverText}>{data.message}</Text>
+                </View>
+              )
+            )}
+          </ScrollView>
           <View style={styles.footer}>
             <TextInput
               value={input}
               onChangeText={(text) => setInput(text)}
               style={styles.inputContainer}
+              onSubmitEditing={sendMessage}
               placeholder="Signal Message"
             />
             <TouchableOpacity onPress={sendMessage} activeOpacity={0.5}>

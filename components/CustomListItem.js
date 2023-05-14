@@ -6,7 +6,7 @@ const CustomListItem = ({ id, data, enterChat }) => {
   return (
     <ListItem
       key={id}
-      onPress={() => enterChat(data.id, data.chatName)}
+      onPress={() => enterChat(id, data.chatName)}
       bottomDivider
     >
       <Avatar

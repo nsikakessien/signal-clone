@@ -10,7 +10,7 @@ import CustomListItem from "../components/CustomListItem";
 import { Avatar } from "@rneui/themed";
 import { auth, db } from "../firebase";
 import { AntDesign, SimpleLineIcons } from "@expo/vector-icons";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 
 const HomeScreen = ({ navigation }) => {
   const [chats, setChats] = useState([]);
@@ -20,8 +20,6 @@ const HomeScreen = ({ navigation }) => {
     navigation.replace("Login");
   };
 
-  const chatRef = collection(db, "chats");
-
   const enterChat = (id, chatName) => {
     navigation.navigate("Chat", {
       id,
@@ -29,18 +27,19 @@ const HomeScreen = ({ navigation }) => {
     });
   };
 
+  const chatRef = collection(db, "chats");
+
   useEffect(() => {
     const arr = [];
     const getChats = async () => {
-      const querySnapshot = await getDocs(collection(db, "chats"));
-      querySnapshot.forEach((doc) => {
-        arr.push({ id: doc.id, data: doc.data() });
+      onSnapshot(chatRef, (snapShot) => {
+        snapShot.forEach((doc) => {
+          arr.push({ id: doc.id, data: doc.data() });
+        });
+        setChats(arr);
       });
-      setChats(arr);
     };
     getChats();
-
-    return () => getChats();
   }, []);
 
   useLayoutEffect(() => {
