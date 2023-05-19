@@ -37,9 +37,11 @@ const CustomListItem = ({ data, enterChat }) => {
         <ListItem.Title style={{ fontWeight: "800" }}>
           {data.data.chatName}
         </ListItem.Title>
-        <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
-          {chatMessages?.[0]?.message}
-        </ListItem.Subtitle>
+        {chatMessages?.[0]?.message && (
+          <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
+            {chatMessages?.[0]?.displayName}: {chatMessages?.[0]?.message}
+          </ListItem.Subtitle>
+        )}
       </ListItem.Content>
     </ListItem>
   );

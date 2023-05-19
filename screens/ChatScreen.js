@@ -9,18 +9,17 @@ import {
   View,
   SafeAreaView,
 } from "react-native";
-import React, { useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Avatar } from "@rneui/themed";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebase";
 import {
+  addDoc,
   collection,
-  doc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
 } from "firebase/firestore";
 
 const ChatScreen = ({ navigation, route }) => {
@@ -66,8 +65,8 @@ const ChatScreen = ({ navigation, route }) => {
 
   const sendMessage = async () => {
     Keyboard.dismiss();
-    const docRef = doc(collection(db, "chats", route.params.id, "messages"));
-    await setDoc(docRef, {
+    const collectionRef = collection(db, "chats", route.params.id, "messages");
+    await addDoc(collectionRef, {
       timeStamp: serverTimestamp(),
       message: input,
       displayName: auth.currentUser.displayName,
@@ -77,21 +76,18 @@ const ChatScreen = ({ navigation, route }) => {
     setInput("");
   };
 
-  useLayoutEffect(() => {
-    const getChats = async () => {
-      let arr = [];
-      const docRef = collection(db, "chats", route.params.id, "messages");
-      const docQuery = await query(docRef, orderBy("timeStamp", "desc"));
-      onSnapshot(docQuery, (snapShot) => {
-        snapShot.forEach((doc) => {
-          arr.push({ id: doc.id, data: doc.data() });
-        });
-        setMessages(arr);
-      });
-    };
-    getChats();
-    return () => getChats();
-  }, [route]);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "chats", route.params.id, "messages"),
+      (snapshot) => {
+        setMessages(
+          snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }))
+        );
+      }
+    );
+
+    return unsub;
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
